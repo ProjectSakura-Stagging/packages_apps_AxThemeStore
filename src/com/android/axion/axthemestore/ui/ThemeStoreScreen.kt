@@ -64,6 +64,7 @@ import com.android.axion.axthemestore.engine.ThemeEngineProxy
 import com.android.axion.axthemestore.ui.components.AsyncNetworkImage
 import com.android.axion.axthemestore.ui.components.ChargingAnimationBannerPreview
 import com.android.axion.axthemestore.ui.components.UdfpsAnimationBannerPreview
+import com.android.axion.axthemestore.ui.components.WaveformSeekBarPreview
 import com.android.axion.axthemestore.ui.components.BackGesturePreview
 import com.android.axion.axthemestore.ui.components.BatteryStylePreview
 import com.android.axion.axthemestore.ui.components.ImagePlaceholder
@@ -484,6 +485,7 @@ private data class ThemePreviewMeta(
     val isChargingAnim: Boolean,
     val isUdfpsAnim: Boolean,
     val isUdfpsIcon: Boolean,
+    val isWaveform: Boolean,
 )
 
 @Composable
@@ -792,6 +794,7 @@ private fun ThemePreviewBox(theme: Theme, transparentBg: Boolean = false) {
             isChargingAnim = packageName.contains("charging_animation") || category.contains("charging_animation"),
             isUdfpsAnim = packageName.contains("udfps_animation") || category.contains("udfps_animation"),
             isUdfpsIcon = packageName.contains("udfps_icon") || category.contains("udfps_icon"),
+            isWaveform = packageName.contains("waveform") || category.contains("waveform"),
         )
     }
     val packageName = previewMeta.packageName
@@ -800,6 +803,7 @@ private fun ThemePreviewBox(theme: Theme, transparentBg: Boolean = false) {
     val isChargingAnim = previewMeta.isChargingAnim
     val isUdfpsAnim = previewMeta.isUdfpsAnim && LocalUdfpsSupported.current
     val isUdfpsIcon = previewMeta.isUdfpsIcon && LocalUdfpsSupported.current
+    val isWaveform = previewMeta.isWaveform
     val previewResIds = remember(packageName) { getLocalPreviewResIds(context, packageName) }
 
     val bgModifier = if (transparentBg) Modifier else Modifier.background(MaterialTheme.colorScheme.surfaceContainer)
@@ -829,6 +833,10 @@ private fun ThemePreviewBox(theme: Theme, transparentBg: Boolean = false) {
                 packageName = packageName,
                 modifier = Modifier.fillMaxSize(),
                 animate = false,
+            )
+            isWaveform -> WaveformSeekBarPreview(
+                packageName = packageName,
+                modifier = Modifier.fillMaxSize(),
             )
             isUdfpsIcon -> {
                 if (theme.previewImages.isNotEmpty()) {
@@ -940,6 +948,7 @@ private fun ThemeListItem(
                         isChargingAnim = pkg.contains("charging_animation") || cat.contains("charging_animation"),
                         isUdfpsAnim = pkg.contains("udfps_animation") || cat.contains("udfps_animation"),
                         isUdfpsIcon = pkg.contains("udfps_icon") || cat.contains("udfps_icon"),
+                        isWaveform = pkg.contains("waveform") || cat.contains("waveform"),
                     )
                 }
                 val packageName = previewMeta.packageName
@@ -948,6 +957,7 @@ private fun ThemeListItem(
                 val isChargingAnim = previewMeta.isChargingAnim
                 val isUdfpsAnim = previewMeta.isUdfpsAnim && LocalUdfpsSupported.current
                 val isUdfpsIcon = previewMeta.isUdfpsIcon && LocalUdfpsSupported.current
+                val isWaveform = previewMeta.isWaveform
                 val ctx = LocalContext.current
                 val previewResIds = remember(packageName) { getLocalPreviewResIds(ctx, packageName) }
 
@@ -1000,6 +1010,18 @@ private fun ThemeListItem(
                             modifier = Modifier.fillMaxSize(),
                             animate = false,
                         )
+                    } else if (isWaveform) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.surfaceContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            WaveformSeekBarPreview(
+                                packageName = packageName,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
                     } else if (isUdfpsIcon) {
                         Box(
                             modifier = Modifier

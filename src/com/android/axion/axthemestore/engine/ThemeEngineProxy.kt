@@ -66,6 +66,7 @@ class ThemeEngineProxy(private val context: Context) {
 
         const val SETTINGS_THEME_ENGINE_DATA = "theme_engine_data"
         private const val OVERLAY_CATEGORY_PREFIX = "android.theme.customization."
+        private const val OVERLAY_CATEGORY_QS_WAVEFORM = "android.theme.customization.qs_waveform"
 
         private val CATEGORY_ALIASES = mapOf(
             "back_gesture" to "android.theme.customization.back_gesture",
@@ -73,6 +74,7 @@ class ThemeEngineProxy(private val context: Context) {
             "battery_style" to "android.theme.customization.battery_style",
             "udfps_animation" to "android.theme.customization.udfps_animation",
             "udfps_icon" to "android.theme.customization.udfps_icon",
+            "qs_waveform" to OVERLAY_CATEGORY_QS_WAVEFORM,
         )
 
         private val SYNCED_OVERLAY_CATEGORIES = setOf(
@@ -83,6 +85,7 @@ class ThemeEngineProxy(private val context: Context) {
             "android.theme.customization.battery_style",
             "android.theme.customization.udfps_animation",
             "android.theme.customization.udfps_icon",
+            OVERLAY_CATEGORY_QS_WAVEFORM,
         )
 
         object Category {
@@ -143,7 +146,9 @@ class ThemeEngineProxy(private val context: Context) {
             val catThemesObj = json.optJSONObject("categoryThemes")
             catThemesObj?.keys()?.forEach { key ->
                 val pkgName = catThemesObj.optString(key)
-                if (pkgName.isNotBlank()) categoryThemes[normalizeOverlayCategory(key)] = pkgName
+                if (pkgName.isNotBlank()) {
+                    categoryThemes[normalizeOverlayCategory(key)] = pkgName
+                }
             }
 
             val themesMap = mutableMapOf<String, ThemeCategoryConfig>()
@@ -318,7 +323,16 @@ class ThemeEngineProxy(private val context: Context) {
 
     private fun buildUpdatedCategoryConfig(config: ThemeEngineConfig, newCategoryThemes: Map<String, String>): ThemeEngineConfig {
         val uniquePackages = newCategoryThemes.values.toSet()
+        val updatedThemes = config.themes.toMutableMap().apply {
+            config.categoryThemes.keys
+                .filterNot(newCategoryThemes::containsKey)
+                .forEach { remove(it) }
+            newCategoryThemes.forEach { (category, packageName) ->
+                put(category, ThemeCategoryConfig(enabled = true, packageName = packageName))
+            }
+        }
         return config.copy(
+            themes = updatedThemes,
             iconTheme = if (uniquePackages.size == 1) uniquePackages.first() else null,
             iconThemeTargets = newCategoryThemes.keys.toList(),
             categoryThemes = newCategoryThemes
@@ -383,7 +397,7 @@ class ThemeEngineProxy(private val context: Context) {
     }
 
     private fun normalizeOverlayCategory(category: String): String =
-        if (category.startsWith(OVERLAY_CATEGORY_PREFIX)) category else CATEGORY_ALIASES[category] ?: category
+        CATEGORY_ALIASES[category] ?: category
 
     private fun Map<String, String>.withAliases(): Map<String, String> {
         val result = toMutableMap()
